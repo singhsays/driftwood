@@ -13,6 +13,8 @@ driftwood periodically connects to the devices and servers in your homelab - rou
 
 driftwood deliberately backs up *configuration, not data*. It won't save your VM disks or your database, pair it with a proper backup tool for that.
 
+driftwood also never *modifies* your devices — it records them. It is read-only by construction: an observation tool, not a config-management tool like Ansible.
+
 ## Quick start
 
 Build:
@@ -35,7 +37,7 @@ nodes:
     host: switch.lan
 
   - name: gateway
-    model: pfsense
+    model: opnsense
     host: gateway.lan
 
   - name: proxmox
@@ -61,10 +63,10 @@ That's it. Point it at a git repo (see below) to keep the history.
 | Model | Device | Fetches |
 |---|---|---|
 | `routeros` | MikroTik | `/export` |
-| `pfsense` | pfSense | `/conf/config.xml` |
+| `opnsense` | OPNsense / pfSense | `/conf/config.xml` |
 | `proxmox` | Proxmox VE host | network, cluster, hosts config |
 | `pihole` | Pi-hole v6 | FTL settings dump |
-| `pct-config` | Proxmox guests | CT/VM definitions |
+| `proxmox-guests` | Proxmox guests | CT/VM definitions |
 | `generic` | anything with SSH | commands you specify |
 
 Devices need SSH key auth from the host running driftwood. Host keys are trusted on first use and recorded in `~/.driftwood/known_hosts`.
