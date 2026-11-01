@@ -4,8 +4,29 @@
 defaults:
   user: root
   interval: 24h
+  keyfile: ~/.ssh/id_ed25519
 
 nodes:
-  - name: myhost
+  # Built-in models know what to fetch for a product.
+  - name: switch
+    model: routeros
+    host: switch.lan
+
+  - name: gateway
+    model: opnsense
+    host: gateway.lan
+
+  - name: hypervisor
+    model: proxmox
+    host: pve.lan
+
+  # The generic model fetches whatever you specify — works for
+  # anything reachable over SSH.
+  - name: nas
     model: generic
-    commands: ["hostname", "uptime"]   # demo: generic exec model
+    host: nas.lan
+    files:
+      - /etc/smb4.conf
+      - /etc/exportfs
+    commands:
+      - cat /etc/version
