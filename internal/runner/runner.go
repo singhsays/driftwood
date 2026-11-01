@@ -4,6 +4,7 @@ package runner
 import (
 	"context"
 	"driftwood/internal/config"
+	"driftwood/internal/git"
 	"driftwood/internal/model"
 	"driftwood/internal/version"
 	"fmt"
@@ -13,6 +14,20 @@ import (
 
 	dssh "driftwood/internal/ssh"
 )
+
+// sink receives fetched artifacts. Satisfied by git.Repo.
+type sink interface {
+	Store(node string, arts []model.Artifact) (bool, error)
+}
+
+// openSink builds the git sink when the config enables git output;
+// nil means fetch-only.
+func openSink(ctx context.Context, cfg *config.Config) (sink, error) {
+	if cfg.Git.Remote == "" {
+		return nil, nil
+	}
+	return git.Open(ctx, cfg.Git)
+}
 
 // Fetch loop tuning.
 const (
@@ -39,6 +54,11 @@ type Result struct {
 
 // Once fetches all nodes concurrently and returns per-node results.
 func Once(ctx context.Context, cfg *config.Config) []Result {
+	sk, err := openSink(ctx, cfg)
+	if err != nil {
+		log.Printf("FAIL git output: %v", err)
+		return nil
+	}
 	var (
 		wg  sync.WaitGroup
 		mu  sync.Mutex
@@ -52,6 +72,9 @@ func Once(ctx context.Context, cfg *config.Config) []Result {
 			sem <- struct{}{}
 			defer func() { <-sem }()
 			r := fetchNode(ctx, n)
+			if r.Err == nil && sk != nil {
+				store(r, sk)
+			}
 			mu.Lock()
 			out = append(out, r)
 			mu.Unlock()
@@ -68,12 +91,16 @@ func Once(ctx context.Context, cfg *config.Config) []Result {
 // backoff and never blocks the others.
 func Daemon(ctx context.Context, cfg *config.Config) error {
 	log.Printf("driftwood %s starting (%d nodes)", version.String(), len(cfg.Nodes))
+	sk, err := openSink(ctx, cfg)
+	if err != nil {
+		return err
+	}
 	var wg sync.WaitGroup
 	for _, node := range cfg.Nodes {
 		wg.Add(1)
 		go func(n config.Node) {
 			defer wg.Done()
-			nodeLoop(ctx, n)
+			nodeLoop(ctx, n, sk)
 		}(node)
 	}
 	wg.Wait()
@@ -86,7 +113,7 @@ func Daemon(ctx context.Context, cfg *config.Config) error {
 
 // nodeLoop fetches immediately, then on the node's interval with jitter.
 // Failures retry at a shorter interval.
-func nodeLoop(ctx context.Context, n config.Node) {
+func nodeLoop(ctx context.Context, n config.Node, sk sink) {
 	interval := n.IntervalOf()
 	failBackoff := interval / failBackoffDivisor
 	if failBackoff < minFailBackoff {
@@ -98,6 +125,9 @@ func nodeLoop(ctx context.Context, n config.Node) {
 			log.Printf("FAIL %s: %v", n.Name, r.Err)
 		} else {
 			log.Printf("OK   %s: %d artifacts (%s)", n.Name, len(r.Artifacts), r.Duration.Round(time.Millisecond))
+		}
+		if r.Err == nil && sk != nil {
+			store(r, sk)
 		}
 		wait := interval
 		if r.Err != nil {
@@ -154,6 +184,16 @@ func fetchNode(ctx context.Context, n config.Node) Result {
 	}
 	r.Duration = time.Since(start)
 	return r
+}
+
+// store pushes one node's artifacts into the git sink, logging failures.
+// A store failure becomes the node's fetch error so the retry backoff
+// covers git problems too.
+func store(r Result, sk sink) {
+	if _, err := sk.Store(r.Node.Name, r.Artifacts); err != nil {
+		log.Printf("FAIL %s (git): %v", r.Node.Name, err)
+		r.Err = err
+	}
 }
 
 // PrintResults logs a human-readable summary.

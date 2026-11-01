@@ -15,6 +15,8 @@ type Git struct {
 	Branch string `yaml:"branch"`
 	// KeyFile is the deploy key used to push to Remote.
 	KeyFile string `yaml:"keyfile"`
+	// Dir is the local mirror of Remote (clone lives here).
+	Dir string `yaml:"dir"`
 	// Author for commits made by driftwood.
 	Name  string `yaml:"name"`
 	Email string `yaml:"email"`
