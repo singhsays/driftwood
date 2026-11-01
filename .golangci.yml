@@ -1,0 +1,30 @@
+# golangci-lint v2 configuration.
+# Deliberately curated: everything enabled stays clean. Add linters only
+# when they earn their place; fix findings instead of suppressing them.
+version: "2"
+
+linters:
+  # standard = errcheck, govet, ineffassign, staticcheck, unused
+  default: standard
+  enable:
+    - revive       # idiomatic Go linting
+    - misspell     # typo catching in comments and strings
+    - errorlint    # correct error wrapping (%w) and comparisons
+    - gosec        # security checks (SSH/crypto-heavy codebase)
+    - unparam      # unused or always-same function params
+    - gocritic     # miscellaneous correctness and style checks
+
+  settings:
+    misspell:
+      # MikroTik RouterOS is a product name, not a misspelling of "routers".
+      ignore-rules:
+        - routeros
+    gosec:
+      excludes:
+        # Reading paths from the operator's own config file is driftwood's
+        # entire job (G304 "file inclusion via variable").
+        - G304
+
+formatters:
+  enable:
+    - gofumpt
