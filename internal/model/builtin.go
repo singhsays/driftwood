@@ -87,7 +87,30 @@ done
 		CommandNames: []string{"guests.txt"},
 	})
 
-	// Generic: commands supplied per node via `commands:` config.
+	// TrueNAS SCALE: the official middleware config export — the same tar
+	// the web UI produces (config DB + password secret seed + root's
+	// authorized keys), directly re-uploadable for restore. Binary and
+	// encrypted as it contains credential material.
+	Register("truenas", Spec{
+		Commands: []string{`set -e
+URL=$(midclt call core.download config.save '[{"secretseed": true, "root_authorized_keys": true}]' driftwood-config.tar | python3 -c "import sys,json; print(json.load(sys.stdin)[1])")
+TMP=$(mktemp /tmp/driftwood-config.XXXXXX)
+trap 'rm -f "$TMP"' EXIT
+for i in 1 2 3 4 5 6; do
+	sleep 2
+	curl -sk -o "$TMP" "http://127.0.0.1$URL" || true
+	[ "$(stat -c %s "$TMP" 2>/dev/null || echo 0)" -gt 1000 ] && break
+done
+if [ "$(stat -c %s "$TMP" 2>/dev/null || echo 0)" -lt 1000 ]; then
+	echo "config.save download failed" >&2
+	exit 1
+fi
+cat "$TMP"`},
+		CommandNames: []string{"config.tar"},
+		Binary:       true,
+	})
+
+	// Generic: commands and files supplied per node via the node config.
 	Register("generic", Spec{})
 }
 

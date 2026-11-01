@@ -176,6 +176,12 @@ func fetchNode(ctx context.Context, n config.Node) Result {
 		}
 		defer func() { _ = c.Close() }()
 		r.Artifacts, r.Err = fetcher.Fetch(c)
+		if r.Err == nil && n.Encrypt != "" {
+			// Encrypt in memory, before anything touches the mirror or git.
+			if eerr := model.EncryptArtifacts(r.Artifacts, n.Encrypt); eerr != nil {
+				r.Err = fmt.Errorf("encrypt: %w", eerr)
+			}
+		}
 	}()
 	select {
 	case <-done:

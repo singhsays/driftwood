@@ -2,6 +2,7 @@
 package config
 
 import (
+	"driftwood/internal/paths"
 	"fmt"
 	"os"
 	"time"
@@ -38,6 +39,9 @@ type Node struct {
 	Commands []string `yaml:"commands"`
 	// Files supplies per-node file paths for the generic file model.
 	Files []string `yaml:"files"`
+	// Encrypt encrypts this node's artifacts to the SSH public key at
+	// the given path before they are stored (age SSH recipient).
+	Encrypt string `yaml:"encrypt"`
 }
 
 // Default values applied when the config omits them.
@@ -121,6 +125,13 @@ func (c *Config) applyDefaults() error {
 		}
 		if n.KeyFile == "" {
 			n.KeyFile = c.Defaults.KeyFile
+		}
+		if n.Encrypt != "" {
+			p := paths.ExpandHome(n.Encrypt)
+			if _, err := os.Stat(p); err != nil {
+				return fmt.Errorf("node %s: encrypt key not found: %w", n.Name, err)
+			}
+			n.Encrypt = p
 		}
 	}
 	return nil

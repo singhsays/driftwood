@@ -3,6 +3,7 @@ package ssh
 
 import (
 	"bytes"
+	"driftwood/internal/paths"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -12,7 +13,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/pkg/sftp"
@@ -116,7 +116,7 @@ func (c *Client) Close() error {
 // loadSigner returns a signer from KeyLoader or the default keys.
 func loadSigner(l KeyLoader) (ssh.Signer, error) {
 	if l.KeyFile != "" {
-		path := expandHome(l.KeyFile)
+		path := paths.ExpandHome(l.KeyFile)
 		raw, err := os.ReadFile(path)
 		if err != nil {
 			return nil, fmt.Errorf("read key %s: %w", path, err)
@@ -137,17 +137,6 @@ func loadSigner(l KeyLoader) (ssh.Signer, error) {
 		return ssh.ParsePrivateKey(raw)
 	}
 	return nil, fmt.Errorf("no SSH key found (set keyfile in config)")
-}
-
-// expandHome resolves a leading ~ in a path.
-func expandHome(p string) string {
-	if p == "~" || strings.HasPrefix(p, "~/") {
-		home, err := os.UserHomeDir()
-		if err == nil {
-			return filepath.Join(home, strings.TrimPrefix(p, "~"))
-		}
-	}
-	return p
 }
 
 // hostKeyCallback implements trust-on-first-use against a known_hosts file.
