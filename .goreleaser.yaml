@@ -1,0 +1,47 @@
+# GoReleaser configuration — releases are published on v* tag pushes
+# by .github/workflows/release.yml.
+version: 2
+
+project_name: driftwood
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - binary: driftwood
+    main: ./cmd/driftwood
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+        -X driftwood/internal/version.Version={{.Version}}
+        -X driftwood/internal/version.Commit={{.FullCommit}}
+        -X driftwood/internal/version.Date={{.CommitDate}}
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: git
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]-]+\))?[:(].*$'
+      order: 0
+    - title: Bug fixes
+      regexp: '^.*?fix(\([[:word:]-]+\))?[:(].*$'
+      order: 1
+    - title: Dependency updates
+      regexp: '^.*?chore(\(deps\))?[:(].*$'
+      order: 2
+    - title: Other changes
+      order: 999
+  filters:
+    exclude:
+      - '^Merge'

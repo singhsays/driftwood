@@ -60,16 +60,21 @@ func String() string {
 		}
 	}
 	if rev != "" {
-		if len(rev) > shortCommitLen {
-			rev = rev[:shortCommitLen]
+		short := rev
+		if len(short) > shortCommitLen {
+			short = short[:shortCommitLen]
 		}
 		if Commit == "" {
-			Commit = rev
+			Commit = short
 		}
 		if v == "" || v == defaultVersion {
-			v = rev
+			v = short
 		}
-		v += "-" + rev + modified
+		// A module pseudo-version (go install from a tag) already encodes
+		// the revision; don't append it twice.
+		if !strings.Contains(v, short) {
+			v += "-" + short + modified
+		}
 	}
 	if Date == "" && stampTime != "" {
 		if t, err := time.Parse(time.RFC3339, stampTime); err == nil {

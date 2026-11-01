@@ -72,8 +72,9 @@ func (d *DaemonCmd) Run() error {
 type VersionCmd struct{}
 
 // Run prints the version.
-func (v *VersionCmd) Run() {
+func (v *VersionCmd) Run() error { //nolint:unparam // kong requires the error return even though it is always nil
 	fmt.Println("driftwood", version.Full())
+	return nil
 }
 
 // filterNodes restricts cfg.Nodes to the named ones, validating names.

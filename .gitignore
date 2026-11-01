@@ -34,3 +34,6 @@ go.work.sum
 
 # driftwood build output
 /bin/
+
+# goreleaser build output
+/dist/
