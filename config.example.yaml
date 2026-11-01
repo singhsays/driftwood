@@ -1,0 +1,11 @@
+# driftwood config — example
+# Nodes are fetched over SSH; artifacts land in the git output repo.
+
+defaults:
+  user: root
+  interval: 24h
+
+nodes:
+  - name: myhost
+    model: generic
+    commands: ["hostname", "uptime"]   # demo: generic exec model

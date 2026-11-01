@@ -6,7 +6,7 @@ driftwood periodically connects to the devices and servers in your homelab - rou
 
 ## How it works
 
-- Runs as a daemon (or once via `--once`) on any host that can reach your devices over SSH
+- Fetches on demand (`driftwood run`) or continuously (`driftwood daemon`) on any host that can reach your devices over SSH
 - Each device has a **model** — a tiny recipe for fetching its config (run a command, grab a file)
 - Fetched configs are hashed; a commit is made **only when something changed**
 - Everything can be pushed to a git remote
@@ -51,7 +51,7 @@ nodes:
 Fetch everything once and see what you get:
 
 ```sh
-driftwood -config config.yaml --once
+driftwood run --config config.yaml
 ```
 
 That's it. Point it at a git repo (see below) to keep the history.
