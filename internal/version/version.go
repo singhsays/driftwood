@@ -16,10 +16,19 @@ import (
 
 // Version is the semver tag the binary was built from (e.g. "v0.1.0"),
 // or a git-describe string like "v0.1.0-3-gabc1234-dirty".
-var Version = "dev"
+var Version = defaultVersion
 
 // Commit is the full or short commit hash, injected at build time.
 var Commit = ""
+
+// defaultVersion is the placeholder when no version was injected.
+const defaultVersion = "dev"
+
+// develVersion is what the toolchain reports for a non-module build.
+const develVersion = "(devel)"
+
+// shortCommitLen is the abbreviated commit hash length.
+const shortCommitLen = 12
 
 // Date is the build date (RFC3339), injected at build time.
 var Date = ""
@@ -27,14 +36,14 @@ var Date = ""
 // String returns the version string, falling back to build info.
 func String() string {
 	v := Version
-	if v != "" && v != "dev" {
+	if v != "" && v != defaultVersion {
 		return v
 	}
 
 	// Fallback: Go toolchain VCS stamping (go >= 1.18, git checkout).
 	var rev, modified, stampTime string
 	if bi, ok := debug.ReadBuildInfo(); ok {
-		if bi.Main.Version != "" && bi.Main.Version != "(devel)" {
+		if bi.Main.Version != "" && bi.Main.Version != develVersion {
 			v = bi.Main.Version
 		}
 		for _, s := range bi.Settings {
@@ -51,13 +60,13 @@ func String() string {
 		}
 	}
 	if rev != "" {
-		if len(rev) > 12 {
-			rev = rev[:12]
+		if len(rev) > shortCommitLen {
+			rev = rev[:shortCommitLen]
 		}
 		if Commit == "" {
 			Commit = rev
 		}
-		if v == "" || v == "dev" {
+		if v == "" || v == defaultVersion {
 			v = rev
 		}
 		v += "-" + rev + modified
@@ -68,7 +77,7 @@ func String() string {
 		}
 	}
 	if v == "" {
-		v = "dev"
+		v = defaultVersion
 	}
 	return v
 }

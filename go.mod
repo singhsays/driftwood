@@ -8,4 +8,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require golang.org/x/sys v0.49.0 // indirect
+require (
+	github.com/kr/fs v0.1.0 // indirect
+	github.com/pkg/sftp v1.13.12 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+)
