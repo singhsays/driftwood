@@ -4,7 +4,7 @@ go 1.27.3
 
 require (
 	filippo.io/age v1.3.2
-	github.com/alecthomas/kong v1.16.1
+	github.com/alecthomas/kong v1.17.0
 	github.com/go-git/go-git/v5 v5.19.3
 	github.com/pkg/sftp v1.13.12
 	golang.org/x/crypto v0.58.0
